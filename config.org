@@ -1,0 +1,181 @@
+#+TITLE: Sose's GNU Emacs Config
+#+AUTHOR: Joni Hiltunen
+#+STARTUP: showeverything
+#+OPTIONS: toc:2
+* Elpaca Package Manager
+#+begin_src emacs-lisp
+    (defvar elpaca-installer-version 0.7)
+    (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
+    (defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
+    (defvar elpaca-repos-directory (expand-file-name "repos/" elpaca-directory))
+    (defvar elpaca-order '(elpaca :repo "https://github.com/progfolio/elpaca.git"
+				  :ref nil :depth 1
+				  :files (:defaults "elpaca-test.el" (:exclude "extensions"))
+				  :build (:not elpaca--activate-package)))
+    (let* ((repo  (expand-file-name "elpaca/" elpaca-repos-directory))
+	   (build (expand-file-name "elpaca/" elpaca-builds-directory))
+	   (order (cdr elpaca-order))
+	   (default-directory repo))
+      (add-to-list 'load-path (if (file-exists-p build) build repo))
+      (unless (file-exists-p repo)
+	(make-directory repo t)
+	(when (< emacs-major-version 28) (require 'subr-x))
+	(condition-case-unless-debug err
+	    (if-let ((buffer (pop-to-buffer-same-window "*elpaca-bootstrap*"))
+		     ((zerop (apply #'call-process `("git" nil ,buffer t "clone"
+						     ,@(when-let ((depth (plist-get order :depth)))
+							 (list (format "--depth=%d" depth) "--no-single-branch"))
+						     ,(plist-get order :repo) ,repo))))
+		     ((zerop (call-process "git" nil buffer t "checkout"
+					   (or (plist-get order :ref) "--"))))
+		     (emacs (concat invocation-directory invocation-name))
+		     ((zerop (call-process emacs nil buffer nil "-Q" "-L" "." "--batch"
+					   "--eval" "(byte-recompile-directory \".\" 0 'force)")))
+		     ((require 'elpaca))
+		     ((elpaca-generate-autoloads "elpaca" repo)))
+		(progn (message "%s" (buffer-string)) (kill-buffer buffer))
+	      (error "%s" (with-current-buffer buffer (buffer-string))))
+	  ((error) (warn "%s" err) (delete-directory repo 'recursive))))
+      (unless (require 'elpaca-autoloads nil t)
+	(require 'elpaca)
+	(elpaca-generate-autoloads "elpaca" repo)
+	(load "./elpaca-autoloads")))
+    (add-hook 'after-init-hook #'elpaca-process-queues)
+    (elpaca `(,@elpaca-order))
+
+  ;; Install use-package support
+  (elpaca elpaca-use-package
+    ;; Enable use-package :ensure support for Elpaca.
+    (elpaca-use-package-mode))
+
+  (setq use-package-always-ensure t)
+#+end_src
+
+* Basic settings first
+Some very basic settings or better defaults to make Emacs more usable.
+** Custom file / backups
+#+begin_src emacs-lisp
+  (setq custom-file "~/.config/emacs/custom.el")
+
+  (savehist-mode 1)
+  (recentf-mode 1)
+
+  (setq backup-directory-alist '(("." . "~/.saves")))
+  (setq backup-by-copying t)
+  (setq version-control t)
+  (setq delete-old-versions t)
+  (setq create-lockfiles nil)
+
+  (setq use-short-answers t)
+  (setq use-dialog-box nil)
+
+  (setq inhibit-startup-message t)
+#+end_src
+** Font
+#+begin_src emacs-lisp
+  (set-face-attribute
+   'default
+   nil
+   :font "JetBrainsMono Nerd Font Mono"
+   :height 100
+   :weight 'medium)
+#+end_src
+** Theme
+#+begin_src emacs-lisp
+  (use-package catppuccin-theme
+    :config (load-theme 'catppuccin :no-confirm))
+#+end_src
+** Disable bars, enable line numbers etc
+#+begin_src emacs-lisp
+  (menu-bar-mode -1)
+  (tool-bar-mode -1)
+  (scroll-bar-mode -1)
+  (blink-cursor-mode -1)
+
+  (global-display-line-numbers-mode 1)
+  (global-visual-line-mode 1)
+#+end_src
+** Indentation settings
+#+begin_src emacs-lisp
+  (setq-default tab-width 2
+		indent-tabs-mode nil)
+#+end_src
+
+* Important packages for basic functionality
+** Evil Mode
+#+begin_src emacs-lisp
+  (use-package evil
+    :init (setq evil-want-integration t
+		evil-want-keybinding nil)
+    :config (evil-mode))
+
+  (use-package evil-collection
+    :after evil
+    :config
+    (setq evil-collection-mode-list '(dashboard dired ibuffer))
+    (evil-collection-init))
+
+  (use-package evil-tutor
+    :after evil)
+#+end_src
+** Which-key
+#+begin_src emacs-lisp
+  (use-package which-key
+    :init (setq which-key-idle-delay 0.1) 
+    :config (which-key-mode))
+#+end_src
+** General Keybindings
+#+begin_src emacs-lisp
+  (use-package general
+    :config
+    (general-evil-setup)
+
+    (general-create-definer
+     sose/leader-keys
+     :states '(normal insert visual emacs)
+     :keymaps 'override
+     :prefix "SPC" ;; leader
+     :global-prefix "M-SPC") ;; access leader in insert mode
+
+    (sose/leader-keys
+     "b" '(:ignore t :wk "buffer")
+     "bb" '(switch-to-buffer :wk "switch buffer")))
+#+end_src
+** Completion framework (ivy)
+#+begin_src emacs-lisp
+  (use-package ivy
+    :config (ivy-mode))
+
+  (use-package counsel
+    :after ivy
+    :config (counsel-mode))
+
+  (use-package all-the-icons-ivy-rich
+    :config (all-the-icons-ivy-rich-mode 1))
+
+  (use-package ivy-rich
+    :after ivy
+    :config (ivy-rich-mode 1))
+#+end_src
+** Rainbow parens
+#+begin_src emacs-lisp
+  (use-package rainbow-delimiters
+    :hook (prog-mode . rainbow-delimiters-mode))
+#+end_src
+* Org-mode things
+** Org tempo
+#+begin_src emacs-lisp
+  (require 'org-tempo)
+  (add-to-list 'org-structure-template-alist '("se" . "src emacs-lisp")) 
+#+end_src
+** Table of contents
+#+begin_src emacs-lisp
+  (use-package toc-org
+    :commands toc-org-enable
+    :hook (org-mode . toc-org-mode))
+#+end_src
+** Nicer bullet points
+#+begin_src emacs-lisp
+  (use-package org-bullets
+    :hook (org-mode . org-bullets-mode))
+#+end_src
