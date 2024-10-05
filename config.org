@@ -2,7 +2,7 @@
 #+AUTHOR: Joni Hiltunen
 #+STARTUP: showeverything
 #+OPTIONS: toc:3
-* Table of Contents                                                :TOC_3_gh:
+* Table of Contents                                          :TOC_3:noexport:
 - [[#elpaca-package-manager][Elpaca Package Manager]]
 - [[#helper-functions][Helper functions]]
 - [[#basic-settings][Basic settings]]
