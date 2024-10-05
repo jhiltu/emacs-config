@@ -1,7 +1,31 @@
-#+TITLE: Sose's GNU Emacs Config
+#+TITLE: Jh's GNU Emacs Config
 #+AUTHOR: Joni Hiltunen
 #+STARTUP: showeverything
-#+OPTIONS: toc:2
+#+OPTIONS: toc:3
+* Table of Contents                                                :TOC_3_gh:
+- [[#elpaca-package-manager][Elpaca Package Manager]]
+- [[#helper-functions][Helper functions]]
+- [[#basic-settings][Basic settings]]
+  - [[#dont-show-default-splash-screen][Don't show default splash screen]]
+  - [[#save-history-recent-files][Save history, recent files]]
+  - [[#custom-file--backups--etc][Custom file / backups / etc]]
+  - [[#short-answers-and-no-gui-dialog-boxes][Short answers and no GUI dialog boxes]]
+  - [[#font][Font]]
+  - [[#theme][Theme]]
+  - [[#disable-bars-enable-line-numbers-etc][Disable bars, enable line numbers etc]]
+  - [[#indentation-settings][Indentation settings]]
+- [[#important-packages-for-basic-functionality][Important packages for basic functionality]]
+  - [[#evil-mode][Evil Mode]]
+  - [[#which-key][Which-key]]
+  - [[#general-keybindings][General Keybindings]]
+  - [[#completion-framework-ivy][Completion framework (ivy)]]
+  - [[#rainbow-parens][Rainbow parens]]
+  - [[#better-modeline-doom][Better modeline (doom)]]
+- [[#org-mode-things][Org-mode things]]
+  - [[#org-tempo][Org tempo]]
+  - [[#table-of-contents][Table of contents]]
+  - [[#nicer-bullet-points][Nicer bullet points]]
+
 * Elpaca Package Manager
 #+begin_src emacs-lisp
     (defvar elpaca-installer-version 0.7)
@@ -50,26 +74,41 @@
 
   (setq use-package-always-ensure t)
 #+end_src
-
-* Basic settings first
-Some very basic settings or better defaults to make Emacs more usable.
-** Custom file / backups
+* Helper functions
 #+begin_src emacs-lisp
-  (setq custom-file "~/.config/emacs/custom.el")
+  (defun jh/find-config-org ()
+    (interactive)
+    (find-file "~/.config/emacs/config.org"))
 
+  (defun jh/reload-config ()
+    (interactive)
+    (load-file user-init-file))
+#+end_src
+* Basic settings
+Some basic settings or better defaults to make Emacs more usable.
+** Don't show default splash screen
+#+begin_src emacs-lisp
+  (setq inhibit-startup-message t)
+#+end_src
+** Save history, recent files
+#+begin_src emacs-lisp
   (savehist-mode 1)
   (recentf-mode 1)
-
+  (save-place-mode 1)
+#+end_src
+** Custom file / backups / etc
+#+begin_src emacs-lisp
+  (setq custom-file "~/.config/emacs/custom.el")
   (setq backup-directory-alist '(("." . "~/.saves")))
   (setq backup-by-copying t)
   (setq version-control t)
   (setq delete-old-versions t)
   (setq create-lockfiles nil)
-
+#+end_src
+** Short answers and no GUI dialog boxes
+#+begin_src emacs-lisp
   (setq use-short-answers t)
   (setq use-dialog-box nil)
-
-  (setq inhibit-startup-message t)
 #+end_src
 ** Font
 #+begin_src emacs-lisp
@@ -94,6 +133,8 @@ Some very basic settings or better defaults to make Emacs more usable.
 
   (global-display-line-numbers-mode 1)
   (global-visual-line-mode 1)
+
+  (hl-line-mode 1)
 #+end_src
 ** Indentation settings
 #+begin_src emacs-lisp
@@ -126,20 +167,32 @@ Some very basic settings or better defaults to make Emacs more usable.
 #+end_src
 ** General Keybindings
 #+begin_src emacs-lisp
-  (use-package general
-    :config
-    (general-evil-setup)
+    (use-package general
+      :config
+      (general-evil-setup)
 
-    (general-create-definer
-     sose/leader-keys
-     :states '(normal insert visual emacs)
-     :keymaps 'override
-     :prefix "SPC" ;; leader
-     :global-prefix "M-SPC") ;; access leader in insert mode
+      (general-create-definer
+       jh/leader-keys
+       :states '(normal insert visual emacs)
+       :keymaps 'override
+       :prefix "SPC" ;; leader
+       :global-prefix "M-SPC") ;; access leader in insert mode
 
-    (sose/leader-keys
-     "b" '(:ignore t :wk "buffer")
-     "bb" '(switch-to-buffer :wk "switch buffer")))
+      (jh/leader-keys
+       "b" '(:ignore t :wk "buffer")
+       "bb" '(switch-to-buffer :wk "switch")
+       "bk" '(kill-buffer :wk "kill"))
+
+      (jh/leader-keys
+        "h" '(:ignore t :wk "help")
+        "hf" '(describe-function :wk "describe function")
+        "hv" '(describe-variable :wk "describe variable")
+        "hP" '(jh/reload-config :wk "reload emacs config"))
+
+      (jh/leader-keys
+        "f" '(:ignore t :wk "files")
+        "ff" '(find-file :wk "find")
+        "fP" '(jh/find-config-org :wk "find emacs config")))
 #+end_src
 ** Completion framework (ivy)
 #+begin_src emacs-lisp
@@ -161,6 +214,11 @@ Some very basic settings or better defaults to make Emacs more usable.
 #+begin_src emacs-lisp
   (use-package rainbow-delimiters
     :hook (prog-mode . rainbow-delimiters-mode))
+#+end_src
+** Better modeline (doom)
+#+begin_src emacs-lisp
+  (use-package doom-modeline
+    :config (doom-modeline-mode 1))
 #+end_src
 * Org-mode things
 ** Org tempo
