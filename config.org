@@ -257,7 +257,7 @@ Useful for easily adding source blocks etc.
 
 Typing the following example expands into an org source block. 
 #+begin_example
-"<se[tab]" 
+<se[tab] 
 #+end_example
 #+begin_src emacs-lisp
   (require 'org-tempo)
