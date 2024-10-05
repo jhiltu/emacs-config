@@ -6,6 +6,8 @@
 - [[#elpaca-package-manager][Elpaca Package Manager]]
 - [[#helper-functions][Helper functions]]
 - [[#basic-settings][Basic settings]]
+  - [[#user-details][User details]]
+  - [[#suppress-byte-compile-warnings][Suppress byte compile warnings]]
   - [[#dont-show-default-splash-screen][Don't show default splash screen]]
   - [[#save-history-recent-files][Save history, recent files]]
   - [[#custom-file--backups--etc][Custom file / backups / etc]]
@@ -18,10 +20,12 @@
   - [[#evil-mode][Evil Mode]]
   - [[#which-key][Which-key]]
   - [[#general-keybindings][General Keybindings]]
-  - [[#completion-framework-ivy][Completion framework (ivy)]]
+  - [[#completion-framework-ivy-counsel-swiper][Completion framework (ivy, counsel, swiper)]]
+  - [[#project-management-projectile][Project management (projectile)]]
   - [[#rainbow-parens][Rainbow parens]]
   - [[#better-modeline-doom][Better modeline (doom)]]
 - [[#org-mode-things][Org-mode things]]
+  - [[#indentation-in-org-mode][Indentation in org-mode?]]
   - [[#org-tempo][Org tempo]]
   - [[#table-of-contents][Table of contents]]
   - [[#nicer-bullet-points][Nicer bullet points]]
@@ -86,6 +90,15 @@
 #+end_src
 * Basic settings
 Some basic settings or better defaults to make Emacs more usable.
+** User details
+#+begin_src emacs-lisp
+  (setq user-full-name "Joni Hiltunen"
+        uesr-mail-address "joni@jonihiltunen.com")
+#+end_src
+** Suppress byte compile warnings
+#+begin_src emacs-lisp
+  (setq byte-compile-warnings '(not free-vars unresolved noruntime lexical make-local))
+#+end_src
 ** Don't show default splash screen
 #+begin_src emacs-lisp
   (setq inhibit-startup-message t)
@@ -139,29 +152,34 @@ Some basic settings or better defaults to make Emacs more usable.
 ** Indentation settings
 #+begin_src emacs-lisp
   (setq-default tab-width 2
-		indent-tabs-mode nil)
+                indent-tabs-mode nil)
 #+end_src
 
 * Important packages for basic functionality
 ** Evil Mode
 #+begin_src emacs-lisp
   (use-package evil
+    :demand t
     :init (setq evil-want-integration t
-		evil-want-keybinding nil)
+                evil-want-c-i-jump nil
+                evil-want-keybinding nil)
     :config (evil-mode))
 
   (use-package evil-collection
     :after evil
+    :demand t
     :config
     (setq evil-collection-mode-list '(dashboard dired ibuffer))
     (evil-collection-init))
 
   (use-package evil-tutor
-    :after evil)
+    :after evil
+    :commands (evil-tutor-start))
 #+end_src
 ** Which-key
 #+begin_src emacs-lisp
   (use-package which-key
+    
     :init (setq which-key-idle-delay 0.1) 
     :config (which-key-mode))
 #+end_src
@@ -194,7 +212,7 @@ Some basic settings or better defaults to make Emacs more usable.
         "ff" '(find-file :wk "find")
         "fP" '(jh/find-config-org :wk "find emacs config")))
 #+end_src
-** Completion framework (ivy)
+** Completion framework (ivy, counsel, swiper)
 #+begin_src emacs-lisp
   (use-package ivy
     :config (ivy-mode))
@@ -203,12 +221,20 @@ Some basic settings or better defaults to make Emacs more usable.
     :after ivy
     :config (counsel-mode))
 
+  (use-package swiper
+    :commands (swiper swiper-all))
+
   (use-package all-the-icons-ivy-rich
     :config (all-the-icons-ivy-rich-mode 1))
 
   (use-package ivy-rich
     :after ivy
     :config (ivy-rich-mode 1))
+#+end_src
+** Project management (projectile)
+#+begin_src emacs-lisp
+  (use-package projectile
+    :demand t)
 #+end_src
 ** Rainbow parens
 #+begin_src emacs-lisp
@@ -221,7 +247,18 @@ Some basic settings or better defaults to make Emacs more usable.
     :config (doom-modeline-mode 1))
 #+end_src
 * Org-mode things
+** Indentation in org-mode?
+TODO: Indenting source blocks in Org mode is currently broken
+#+begin_src emacs-lisp
+  (setq org-src-tab-acts-natively t)
+#+end_src
 ** Org tempo
+Useful for easily adding source blocks etc.
+
+Typing the following example expands into an org source block. 
+#+begin_example
+"<se[tab]" 
+#+end_example
 #+begin_src emacs-lisp
   (require 'org-tempo)
   (add-to-list 'org-structure-template-alist '("se" . "src emacs-lisp")) 
